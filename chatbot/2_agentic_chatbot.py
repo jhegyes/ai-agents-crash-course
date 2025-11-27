@@ -2,18 +2,24 @@ import chainlit as cl
 import dotenv
 from openai.types.responses import ResponseTextDeltaEvent
 
-from agents import Runner
+from agents import Runner, SQLiteSession
 from nutrition_agent import nutrition_agent
 
 dotenv.load_dotenv()
 
+@cl.on_chat_start
+async def on_chat_start():
+    session= SQLiteSession("conversation_history")
+    cl.user_session.set("agent_session", session)
+
 
 @cl.on_message
 async def on_message(message: cl.Message):
-
+    session = cl.user_session.get("agent_session")
     result = Runner.run_streamed(
         nutrition_agent,
         message.content,
+        session=session,
     )
 
     msg = cl.Message(content="")
